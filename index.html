@@ -10,21 +10,26 @@
     <div class="container">
         <h1>Jogo de Bolas</h1>
         <div class="input-section">
-            <label for="num-jogadores">Quantidade de Jogadores:</label>
-            <input type="number" id="num-jogadores" min="2" max="4">
+            <label for="num-jogadores">Quantidade de jogadores:</label>
+            <input type="number" id="num-jogadores" min="1" max="10">
+            <button id="start-button">Iniciar Jogo</button>
         </div>
-        <div id="jogadores-nomes"></div>
-        <button id="iniciar-jogo">Iniciar Jogo</button>
-        <div id="jogo-info" class="hidden">
-            <h2>Informações do Jogo</h2>
-            <div id="info-text"></div>
-            <div class="input-section">
-                <label for="bola-derrubada">Bola Derrubada (1-15, 0 se nenhuma):</label>
-                <input type="text" id="bola-derrubada">
-                <label for="suicidio">Suicídio (S/N):</label>
-                <input type="text" id="suicidio">
-                <button id="enviar-bola">Enviar</button>
+        <div class="input-section hidden" id="jogadores-nomes">
+            <h2>Insira os nomes dos jogadores</h2>
+            <div id="nomes-inputs"></div>
+            <button id="nomes-button">Confirmar Nomes</button>
+        </div>
+        <div class="hidden" id="game-section">
+            <h2 id="jogador-vez"></h2>
+            <div id="actions">
+                <label for="bola-input">Qual bola foi derrubada? (1-15, 0 se nenhuma):</label>
+                <input type="number" id="bola-input" min="0" max="15">
+                <button id="bola-button">Confirmar Bola</button>
+                <label for="suicidio-input">O jogador cometeu um suicídio? (S/N):</label>
+                <input type="text" id="suicidio-input" maxlength="1">
+                <button id="suicidio-button">Confirmar Suicídio</button>
             </div>
+            <pre id="info-text"></pre>
         </div>
     </div>
     <script src="script.js"></script>

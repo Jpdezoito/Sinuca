@@ -1,144 +1,148 @@
 document.addEventListener('DOMContentLoaded', () => {
+    const startButton = document.getElementById('start-button');
+    const nomesButton = document.getElementById('nomes-button');
+    const bolaButton = document.getElementById('bola-button');
+    const suicidioButton = document.getElementById('suicidio-button');
     const numJogadoresInput = document.getElementById('num-jogadores');
     const jogadoresNomesDiv = document.getElementById('jogadores-nomes');
-    const iniciarJogoButton = document.getElementById('iniciar-jogo');
-    const jogoInfoDiv = document.getElementById('jogo-info');
+    const nomesInputsDiv = document.getElementById('nomes-inputs');
+    const gameSectionDiv = document.getElementById('game-section');
+    const jogadorVezP = document.getElementById('jogador-vez');
+    const bolaInput = document.getElementById('bola-input');
+    const suicidioInput = document.getElementById('suicidio-input');
     const infoTextDiv = document.getElementById('info-text');
-    const bolaDerrubadaInput = document.getElementById('bola-derrubada');
-    const suicidioInput = document.getElementById('suicidio');
-    const enviarBolaButton = document.getElementById('enviar-bola');
 
     let jogadores = [];
+    let ordemJogadores = [];
+    let jogadorAtualIndex = 0;
     let bolasPorJogador = {};
     let bolasNeutras = [];
     let bolasReveladas = {};
     let bolasCaidas = {};
     let jogadoresSuicidados = new Set();
-    let ordemJogadores = [];
 
-    numJogadoresInput.addEventListener('input', () => {
+    startButton.addEventListener('click', () => {
         const numJogadores = parseInt(numJogadoresInput.value);
-        jogadoresNomesDiv.innerHTML = '';
-        for (let i = 0; i < numJogadores; i++) {
-            const input = document.createElement('input');
-            input.type = 'text';
-            input.placeholder = `Nome do Jogador ${i + 1}`;
-            input.id = `jogador-${i + 1}`;
-            jogadoresNomesDiv.appendChild(input);
-        }
-    });
-
-    iniciarJogoButton.addEventListener('click', () => {
-        const numJogadores = parseInt(numJogadoresInput.value);
-        jogadores = [];
-        for (let i = 0; i < numJogadores; i++) {
-            const nome = document.getElementById(`jogador-${i + 1}`).value;
-            jogadores.push(nome);
-        }
-        [bolasPorJogador, bolasNeutras] = distribuirBolasIgualmente(jogadores);
-        ordemJogadores = [...jogadores];
-        shuffle(ordemJogadores);
-        bolasReveladas = jogadores.reduce((acc, jogador) => ({ ...acc, [jogador]: [] }), {});
-        bolasReveladas['neutras'] = [];
-        bolasCaidas = {};
-        jogadoresSuicidados = new Set();
-        jogoInfoDiv.classList.remove('hidden');
-        mostrarBolas();
-    });
-
-    enviarBolaButton.addEventListener('click', () => {
-        const bolaDerrubada = bolaDerrubadaInput.value;
-        const suicidio = suicidioInput.value.toLowerCase();
-        bolaDerrubadaInput.value = '';
-        suicidioInput.value = '';
-
-        if (ordemJogadores.length === 0) {
-            infoTextDiv.textContent += 'Fim do jogo!\n';
-            return;
-        }
-
-        const jogador = ordemJogadores[0];
-        ordemJogadores.push(ordemJogadores.shift());
-
-        if (bolaDerrubada === 'ER') {
-            infoTextDiv.textContent += 'Erro de digitação. Por favor, informe um número de 1 a 15.\n';
-            return;
-        }
-
-        if (!/^\d+$/.test(bolaDerrubada) || parseInt(bolaDerrubada) < 0 || parseInt(bolaDerrubada) > 15) {
-            infoTextDiv.textContent += 'Erro de digitação. Por favor, informe um número de 1 a 15 ou 0 para nenhuma.\n';
-            return;
-        }
-
-        const bola = parseInt(bolaDerrubada);
-
-        if (bolasReveladas[jogador].includes(bola) || bolasReveladas['neutras'].includes(bola)) {
-            infoTextDiv.textContent += 'Essa bola já caiu.\n';
-            return;
-        }
-
-        if (bola > 0) {
-            if (bolasNeutras.includes(bola)) {
-                bolasNeutras = bolasNeutras.filter(b => b !== bola);
-                bolasReveladas['neutras'].push(bola);
-            } else {
-                for (const adversario of jogadores) {
-                    if (bolasPorJogador[adversario].includes(bola)) {
-                        bolasPorJogador[adversario] = bolasPorJogador[adversario].filter(b => b !== bola);
-                        bolasReveladas[adversario].push(bola);
-                        bolasCaidas[adversario] = bolasCaidas[adversario] || [];
-                        bolasCaidas[adversario].push(bola);
-                        break;
-                    }
-                }
+        if (numJogadores > 0) {
+            jogadoresNomesDiv.classList.remove('hidden');
+            nomesInputsDiv.innerHTML = '';
+            for (let i = 0; i < numJogadores; i++) {
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.placeholder = `Nome do jogador ${i + 1}`;
+                nomesInputsDiv.appendChild(input);
             }
         }
+    });
 
+    nomesButton.addEventListener('click', () => {
+        jogadores = Array.from(nomesInputsDiv.querySelectorAll('input')).map(input => input.value.trim()).filter(nome => nome);
+        if (jogadores.length > 0) {
+            iniciarJogo();
+            jogadoresNomesDiv.classList.add('hidden');
+            gameSectionDiv.classList.remove('hidden');
+            atualizarJogadorVez();
+        }
+    });
+
+    bolaButton.addEventListener('click', () => {
+        const bolaDerrubada = parseInt(bolaInput.value);
+        const jogador = ordemJogadores[jogadorAtualIndex];
+        if (bolaDerrubada >= 0 && bolaDerrubada <= 15 && !bolasReveladas[jogador].includes(bolaDerrubada)) {
+            if (bolaDerrubada === 0) {
+                avancarJogador();
+            } else {
+                registrarBolaDerrubada(jogador, bolaDerrubada);
+                mostrarBolas();
+            }
+        } else {
+            alert("Erro de digitação. Por favor, informe um número de 1 a 15 ou 0 para nenhuma.");
+        }
+    });
+
+    suicidioButton.addEventListener('click', () => {
+        const suicidio = suicidioInput.value.trim().toLowerCase();
+        const jogador = ordemJogadores[jogadorAtualIndex];
         if (suicidio === 's') {
             jogadoresSuicidados.add(jogador);
             infoTextDiv.textContent += `${jogador} cometeu um 'suicídio' e ficará fora da próxima rodada.\n`;
         }
-
-        mostrarBolas();
-        verificarVencedor();
+        avancarJogador();
     });
 
-    function distribuirBolasIgualmente(jogadores) {
-        const maxBolas = Math.floor(15 / jogadores.length);
-        const bolas = Array.from({ length: 15 }, (_, i) => i + 1);
-        shuffle(bolas);
-        const bolasPorJogador = jogadores.reduce((acc, jogador, i) => {
-            acc[jogador] = bolas.slice(i * maxBolas, (i + 1) * maxBolas);
-            return acc;
-        }, {});
-        const bolasNeutras = bolas.slice(jogadores.length * maxBolas);
-        return [bolasPorJogador, bolasNeutras];
+    function iniciarJogo() {
+        ordemJogadores = [...jogadores];
+        randomizeArray(ordemJogadores);
+        [bolasPorJogador, bolasNeutras] = distribuirBolasIgualmente(jogadores);
+        bolasReveladas = { 'neutras': [], ...jogadores.reduce((acc, jogador) => ({ ...acc, [jogador]: [] }), {}) };
+        bolasCaidas = {};
+        jogadoresSuicidados.clear();
+        mostrarBolas();
     }
 
-    function shuffle(array) {
+    function randomizeArray(array) {
         for (let i = array.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [array[i], array[j]] = [array[j], array[i]];
         }
     }
 
-    function mostrarBolas() {
-        infoTextDiv.textContent = '';
-        for (const jogador of jogadores) {
-            const bolas = bolasPorJogador[jogador].map(bola => bolasReveladas[jogador].includes(bola) ? bola : '*').join(' ');
-            const caidas = (bolasCaidas[jogador] || []).join(' ');
-            infoTextDiv.textContent += `Jogador: ${jogador} - Bolas: ${bolas}      Bolas caídas: ${caidas}\n`;
-        }
-        const neutras = bolasNeutras.map(bola => bolasReveladas['neutras'].includes(bola) ? bola : '*').join(' ');
-        infoTextDiv.textContent += `Bolas neutras: ${neutras}\n`;
+    function distribuirBolasIgualmente(jogadores) {
+        const maxBolas = 15 / jogadores.length;
+        const bolas = Array.from({ length: 15 }, (_, i) => i + 1);
+        randomizeArray(bolas);
+        const bolasPorJogador = {};
+        jogadores.forEach((jogador, i) => {
+            bolasPorJogador[jogador] = bolas.slice(i * maxBolas, (i + 1) * maxBolas);
+        });
+        const bolasNeutras = bolas.slice(jogadores.length * maxBolas);
+        return [bolasPorJogador, bolasNeutras];
     }
 
-    function verificarVencedor() {
-        const jogadoresAtivos = jogadores.filter(jogador => !jogadoresSuicidados.has(jogador));
-        if (jogadoresAtivos.length === 1 && jogadoresSuicidados.size > 0) {
-            const vencedor = jogadoresAtivos[0];
-            infoTextDiv.textContent += `${vencedor} ganha a partida porque todos os outros jogadores se suicidaram.\n`;
-            ordemJogadores = [];
+    function registrarBolaDerrubada(jogador, bola) {
+        if (bolasNeutras.includes(bola)) {
+            bolasNeutras.splice(bolasNeutras.indexOf(bola), 1);
+            bolasReveladas['neutras'].push(bola);
+        } else {
+            for (const [adversario, bolas] of Object.entries(bolasPorJogador)) {
+                if (bolas.includes(bola)) {
+                    bolas.splice(bolas.indexOf(bola), 1);
+                    bolasReveladas[adversario].push(bola);
+                    if (!bolasCaidas[adversario]) {
+                        bolasCaidas[adversario] = [];
+                    }
+                    bolasCaidas[adversario].push(bola);
+                    break;
+                }
+            }
+        }
+    }
+
+    function mostrarBolas() {
+        let infoText = '';
+        for (const jogador of jogadores) {
+            const bolasJogador = bolasPorJogador[jogador].map(bola => bolasReveladas[jogador].includes(bola) ? bola : '*');
+            const bolasCaidasJogador = bolasCaidas[jogador] || [];
+            infoText += `Jogador: ${jogador} - Bolas: ${bolasJogador.join(', ')}      Bolas caídas: ${bolasCaidasJogador.join(', ')}\n`;
+        }
+        const bolasNeutrasOcultas = bolasNeutras.map(bola => bolasReveladas['neutras'].includes(bola) ? bola : '*');
+        infoText += `Bolas neutras: ${bolasNeutrasOcultas.join(', ')}\n`;
+        infoTextDiv.textContent = infoText;
+    }
+
+    function atualizarJogadorVez() {
+        const jogador = ordemJogadores[jogadorAtualIndex];
+        jogadorVezP.textContent = `Vez do jogador: ${jogador}`;
+    }
+
+    function avancarJogador() {
+        jogadorAtualIndex = (jogadorAtualIndex + 1) % ordemJogadores.length;
+        if (jogadoresSuicidados.has(ordemJogadores[jogadorAtualIndex])) {
+            infoTextDiv.textContent += `${ordemJogadores[jogadorAtualIndex]} está fora desta rodada por ter cometido um 'suicídio'.\n`;
+            jogadoresSuicidados.delete(ordemJogadores[jogadorAtualIndex]);
+            avancarJogador();
+        } else {
+            atualizarJogadorVez();
         }
     }
 });
