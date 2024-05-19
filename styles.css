@@ -1,0 +1,52 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f0f0f0;
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    max-width: 800px;
+    margin: 50px auto;
+    padding: 20px;
+    background-color: white;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+h1, h2 {
+    text-align: center;
+}
+
+.input-section {
+    margin: 20px 0;
+    text-align: center;
+}
+
+label {
+    margin-right: 10px;
+}
+
+input {
+    padding: 5px;
+    margin-bottom: 10px;
+}
+
+button {
+    padding: 10px 20px;
+    margin: 10px;
+    cursor: pointer;
+}
+
+.hidden {
+    display: none;
+}
+
+#info-text {
+    padding: 10px;
+    background-color: #e0e0e0;
+    margin: 20px 0;
+    max-height: 200px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    border: 1px solid #ccc;
+}
